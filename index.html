@@ -220,7 +220,7 @@ function elapsed(t) {
 // 4주 안에서 주차별 목표 횟수. '5/3/1'은 세트마다 5회, 3회, 1회.
 const REPS = {
   main: ['12-15', '8-12', '6-8', '3-5'],
-  cap6: ['12-15', '8-12', '6-8', '6-8'],    // 덤벨 프레스, 랫풀다운: 3-5회 대신 6-8회
+  cap6: ['12-15', '8-12', '6-8', '6-8'],    // 덤벨 프레스, 랫풀다운, 로우, 레그프레스: 3-5회 대신 6-8회
   arm:  ['12-15', '10-12', '8-10', '6-8'],  // 팔꿈치 부담 때문에 최저 6회
   iso:  ['15-20', '12-15', '10-12', '8-10'], // 고중량이 비효율적인 고립 운동
   vert: ['12-15', '8-12', '5-8', '3-5'],     // 4일차: 1·2주 랫풀다운, 3주 맨몸 풀업, 4주 중량 풀업
@@ -238,10 +238,10 @@ const NOTES = {
 };
 // [운동 이름(주차별로 다르면 4개 배열), 횟수 종류, 세트 수(기본 3)]
 const PPLUL_DAYS = [
-  ['Pull', [['Barbell Row', 'main'], ['Lat Pulldown', 'cap6'], ['Arm Pulldown', 'iso'], ['Rear Delt Fly', 'iso'], ['Barbell Curl', 'arm'], ['Hammer Curl', 'arm']]],
+  ['Pull', [['Barbell Row', 'cap6'], ['Lat Pulldown', 'cap6'], ['Machine Row', 'cap6'], ['Rear Delt Fly', 'iso'], ['Barbell Curl', 'arm'], ['Hammer Curl', 'arm']]],
   ['Push', [['Bench Press', 'main'], ['Incline Dumbbell Press', 'cap6'], ['Machine Shoulder Press', 'main'], ['Lying Triceps Extension', 'arm'], ['Cable Rope Pushdown', 'iso']]],
-  ['Legs', [['Squat', 'main'], ['Leg Press', 'main'], ['Leg Extension', 'iso'], ['Leg Curl', 'iso'], ['Side Lateral Raise', 'iso', 4]]],
-  ['Upper', [['Overhead Press', 'main'], ['Dumbbell Bench Press', 'cap6'], [['Lat Pulldown', 'Lat Pulldown', 'Pull-up', 'Pull-up'], 'vert'], ['Dumbbell Curl', 'arm'], ['Cable Straight-Arm Pulldown', 'iso']]],
+  ['Legs', [['Squat', 'main'], ['Leg Press', 'cap6'], ['Leg Extension', 'iso'], ['Leg Curl', 'iso'], ['Side Lateral Raise', 'iso', 4]]],
+  ['Upper', [['Overhead Press', 'main'], ['Dumbbell Bench Press', 'cap6'], [['Lat Pulldown', 'Lat Pulldown', 'Pull-up', 'Pull-up'], 'vert'], ['Dumbbell Curl', 'arm'], ['Straight Bar Pushdown', 'iso']]],
   ['Legs', [['Conventional Deadlift', 'dead'], ['Leg Extension', 'iso'], ['Leg Curl', 'iso'], ['Side Lateral Raise', 'iso', 4]]],
 ];
 
@@ -265,22 +265,23 @@ function previousSets(exercise) {
   }
   return [];
 }
-// 증량 기준: 2주차 평균 횟수가 목표 범위 가운데 값을 넘었는가 (8-12회면 평균 10 초과). 5/3/1은 모든 세트 성공.
+// 증량 기준: 평균 횟수가 목표 범위 가운데 값 이상인가 (8-12회면 평균 10 이상, 11·10·9회도 통과). 5/3/1은 모든 세트 성공.
 function passed(it) {
   if (!it) return false;
+  if (!it.target) return true;
   const reps = it.sets.map(s => s.reps);
   if (it.target.includes('/')) return it.target.split('/').every((t, i) => reps[i] >= +t);
   const [lo, hi] = it.target.split('-').map(Number);
-  return reps.reduce((a, b) => a + b, 0) / reps.length > (lo + hi) / 2;
+  return reps.reduce((a, b) => a + b, 0) / reps.length >= (lo + hi) / 2;
 }
 // 세트별 추천 무게
-// - 4주 안: 지난주 같은 일차 무게 + 증량 폭 (매주 증량)
+// - 4주 안: 지난주 같은 일차 무게 + 증량 폭 (매주 증량). 지난주가 증량 기준에 못 미치면 같은 무게
 // - 새 4주 시작(5·9주차): 지난 4주의 1주차 무게, 그 4주의 2주차가 증량 기준을 넘었으면 + 증량 폭
 // - 지난주 기록이 없으면: 4주 전 같은 주차 무게 그대로. 그것도 없으면 빈칸(직접 입력)
 function suggestWeights(week, day, exercise, n) {
   const step = STEP[exercise] ?? 2.5;
   let base = (week - 1) % 4 ? findLog(week - 1, day, exercise) : null;
-  let add = base ? step : 0;
+  let add = base && passed(base) ? step : 0;
   if (!base) {
     base = findLog(week - 4, day, exercise);
     if (base && (week - 1) % 4 === 0 && passed(findLog(week - 3, day, exercise))) add = step;
@@ -295,8 +296,9 @@ function startProgram() {
     name: `PPLUL ${week}주차 ${day}일차 ${plan.dayName}`,
     program: { week, day },
     items: plan.items.map(({ exercise, target, nSets }) => {
-      // 횟수 칸은 범위의 아래쪽 값으로 채운다. 실제로 한 횟수로 고쳐야 증량 판단이 맞다.
-      const reps = target.includes('/') ? target.split('/').map(Number) : Array(nSets).fill(+target.split('-')[0]);
+      // 횟수 칸은 증량 기준인 범위 가운데 값(올림)으로 채운다. 못 채웠으면 실제 횟수로 고쳐야 증량 판단이 맞다.
+      const [lo, hi] = target.split('-').map(Number);
+      const reps = target.includes('/') ? target.split('/').map(Number) : Array(nSets).fill(Math.ceil((lo + hi) / 2));
       const weights = suggestWeights(week, day, exercise, reps.length);
       return { exercise, target, sets: reps.map((r, i) => ({ weight: weights[i], reps: r })) };
     }),
@@ -329,8 +331,10 @@ const EX_MUSCLES = {
   'Barbell Row': { back: 1, biceps: .5, shoulders: .5, lowerback: .5 },
   'Lat Pulldown': { back: 1, biceps: .5 },
   'Pull-up': { back: 1, biceps: .5 },
-  'Arm Pulldown': { back: 1 },
-  'Cable Straight-Arm Pulldown': { back: 1 },
+  'Machine Row': { back: 1, biceps: .5, shoulders: .5 },
+  'Arm Pulldown': { back: 1 }, // 예전 1일차 운동 (이전 기록용)
+  'Straight Bar Pushdown': { triceps: 1 },
+  'Cable Straight-Arm Pulldown': { triceps: 1 }, // 예전 이름 (이전 기록용)
   'Rear Delt Fly': { shoulders: 1, back: .5 },
   'Barbell Curl': { biceps: 1, forearms: .5 },
   'Dumbbell Curl': { biceps: 1, forearms: .5 },
