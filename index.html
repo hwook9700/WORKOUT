@@ -1,0 +1,663 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#17181c">
+<title>운동 기록</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;1,800&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+:root {
+  --bg:#f3f4f6; --card:#ffffff; --chip:#eef0f3; --text:#15171a; --muted:#6b7280; --line:#e3e6ea;
+  --accent:#f97316; --accent-ink:#c2410c; --accent-soft:rgba(249,115,22,.13); --on-accent:#1c0a00;
+  --hero:#17181c; --danger:#dc2626; --body:#e6e8eb;
+  --shadow:0 1px 2px rgba(16,24,40,.05), 0 6px 16px rgba(16,24,40,.06);
+  --font:'Pretendard Variable',Pretendard,system-ui,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  --display:'Barlow Condensed','Pretendard Variable',Pretendard,sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg:#0d0e11; --card:#1a1c21; --chip:#25282e; --text:#f1f2f4; --muted:#9aa1ab; --line:#2c2f36;
+    --accent-ink:#fb923c; --accent-soft:rgba(249,115,22,.18); --hero:#23262c; --danger:#f87171; --body:#3a3e46; --shadow:none; }
+}
+* { box-sizing:border-box; }
+body { margin:0; font-family:var(--font); background:var(--bg); color:var(--text); letter-spacing:-.01em;
+  padding-bottom:calc(84px + env(safe-area-inset-bottom)); -webkit-tap-highlight-color:transparent; }
+main { padding:20px 16px; max-width:480px; margin:auto; }
+h1 { font-size:1.6rem; font-weight:800; margin:4px 0 16px; letter-spacing:-.02em; }
+h2 { font-size:1.05rem; font-weight:700; margin:28px 0 12px; }
+h3 { font-size:1rem; font-weight:700; margin:0 0 8px; }
+.card { background:var(--card); border-radius:18px; padding:16px; margin-bottom:12px; box-shadow:var(--shadow); }
+.muted { color:var(--muted); }
+.small { font-size:.85rem; }
+.num { font-family:var(--display); font-weight:800; font-variant-numeric:tabular-nums; }
+.row { display:flex; gap:8px; align-items:center; margin:6px 0; flex-wrap:wrap; }
+.between { justify-content:space-between; }
+.grow { flex:1; }
+.ic { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none; }
+
+button { font:inherit; font-weight:600; padding:11px 16px; border-radius:12px; border:0; background:var(--chip); color:var(--text); cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center; gap:6px; }
+button:active { transform:scale(.98); }
+.btn-primary { background:var(--accent); color:var(--on-accent); font-weight:700; }
+.btn-add { width:100%; background:none; border:1.5px dashed var(--accent); color:var(--accent-ink); padding:13px; }
+.btn-link { background:none; padding:6px 4px; color:var(--muted); }
+.danger { color:var(--danger); }
+.full { width:100%; }
+input, select { font:inherit; font-size:16px; padding:10px; border:1px solid var(--line); border-radius:10px; background:var(--card); color:var(--text); min-width:0; }
+
+/* 하단 탭 */
+nav { position:fixed; bottom:0; left:0; right:0; display:flex; background:var(--card); border-top:1px solid var(--line);
+  padding:6px 0 calc(6px + env(safe-area-inset-bottom)); z-index:10; }
+nav button { flex:1; flex-direction:column; gap:3px; padding:6px 0; background:none; color:var(--muted); font-size:.75rem; font-weight:600; border-radius:0; }
+nav button .ic { width:24px; height:24px; }
+nav button.on { color:var(--accent-ink); }
+
+/* 운동 탭 */
+.top { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+.streak { display:flex; align-items:center; gap:10px; }
+.streak .flame { width:44px; height:44px; border-radius:14px; background:var(--accent-soft); color:var(--accent); display:grid; place-items:center; }
+.streak .flame .ic { width:24px; height:24px; }
+.streak b { font-size:1.9rem; line-height:1; margin-right:3px; }
+.streak .label { font-weight:700; }
+.week { display:flex; gap:3px; }
+.week span { width:26px; height:26px; border-radius:50%; display:grid; place-items:center; font-size:.75rem; font-weight:600; color:var(--muted); }
+.week .done { background:var(--accent); color:var(--on-accent); }
+.week .today { box-shadow:0 0 0 2px var(--text); color:var(--text); }
+
+.hero { background:radial-gradient(120% 90% at 100% 0%, rgba(249,115,22,.30), transparent 60%), var(--hero); color:#fff;
+  border-radius:22px; padding:20px; --body:#3b3f47; }
+.hero .kicker { color:var(--accent); font-weight:700; font-size:.78rem; letter-spacing:.06em; }
+.hero .day { font-family:var(--display); font-weight:800; font-style:italic; font-size:3.2rem; line-height:.95; text-transform:uppercase; margin:6px 0 4px; }
+.hero .sub { color:#b9bec7; font-size:.9rem; }
+.hero-top { display:flex; justify-content:space-between; gap:8px; }
+.hero-map { width:132px; flex:none; margin:-6px -8px 0 0; }
+.hero .bar { background:rgba(255,255,255,.14); }
+.hero .ex-line { border-top:1px solid rgba(255,255,255,.08); }
+.hero .ex-line span:last-child { color:#9aa1ab; }
+.hero details summary { color:#9aa1ab; }
+.hero select { background:#2b2e35; color:#fff; border-color:#3a3e46; }
+.bar { height:8px; background:var(--line); border-radius:4px; overflow:hidden; flex:1; }
+.bar div { height:100%; background:var(--accent); border-radius:4px; }
+.ex-line { display:flex; justify-content:space-between; gap:8px; padding:9px 0; font-size:.95rem; }
+.ex-line span:last-child { color:var(--muted); white-space:nowrap; font-variant-numeric:tabular-nums; }
+details summary { font-size:.85rem; margin-top:12px; cursor:pointer; }
+
+.tiles { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.tile { flex-direction:column; gap:10px; background:var(--card); box-shadow:var(--shadow); border-radius:18px; padding:18px 6px; font-size:.9rem; }
+.chip-ic { width:46px; height:46px; border-radius:14px; background:var(--accent-soft); color:var(--accent-ink); display:grid; place-items:center; }
+.chip-ic .ic { width:24px; height:24px; }
+
+/* 운동 중 */
+.wbar { position:sticky; top:0; z-index:5; display:flex; align-items:center; justify-content:space-between; gap:8px;
+  margin:-20px -16px 8px; padding:12px 16px; background:color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter:blur(10px); }
+.timer { display:flex; gap:6px; align-items:center; background:var(--card); border-radius:999px; padding:7px 14px 7px 12px; box-shadow:var(--shadow); }
+.timer .ic { color:var(--accent); }
+.timer span { font-family:var(--display); font-size:1.4rem; font-weight:700; font-variant-numeric:tabular-nums; min-width:3.2em; }
+.ex { border:2px solid transparent; }
+.ex.active { border-color:var(--accent); }
+.ex-head { display:flex; align-items:center; gap:10px; }
+.ex-num { width:30px; height:30px; border-radius:9px; background:var(--accent-soft); color:var(--accent-ink); display:grid; place-items:center; font-size:1.15rem; flex:none; }
+.ex-head h3 { flex:1; margin:0; font-size:1.08rem; }
+.icon-btn { background:none; padding:6px; color:var(--muted); }
+.sets { display:grid; grid-template-columns:24px 1fr 42px 62px 50px 34px; gap:7px 6px; align-items:center; margin-top:12px; }
+.sets .th { font-size:.72rem; color:var(--muted); font-weight:600; text-align:center; }
+.sets .th:nth-child(2) { text-align:left; }
+.set { display:contents; }
+.setno { text-align:center; font-size:1.1rem; }
+.prev { color:var(--muted); font-size:.85rem; font-variant-numeric:tabular-nums; }
+.tgt { text-align:center; font-size:.85rem; font-weight:600; }
+.sets input { width:100%; text-align:center; background:var(--chip); border:0; font-weight:700; padding:9px 2px; }
+.set.done input { background:var(--accent-soft); }
+.check { width:32px; height:32px; border-radius:50%; border:2px solid var(--line); background:none; padding:0; color:transparent; }
+.check .ic { width:18px; height:18px; stroke-width:3; }
+.set.done .check { background:var(--accent); border-color:var(--accent); color:var(--on-accent); }
+
+/* 기록 탭 */
+.cal { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; text-align:center; }
+.cal .head { font-size:.75rem; color:var(--muted); font-weight:600; padding:6px 0; }
+.cal .day { aspect-ratio:1; border-radius:50%; background:none; padding:0; font-weight:500; font-variant-numeric:tabular-nums; }
+.cal .done { background:var(--accent); color:var(--on-accent); font-weight:700; }
+.cal .today { box-shadow:0 0 0 2px var(--text); }
+.cal .sel { box-shadow:0 0 0 3px var(--accent-ink); }
+.meta { display:flex; gap:14px; color:var(--muted); font-size:.85rem; margin:6px 0 4px; }
+.meta span { display:flex; gap:4px; align-items:center; }
+.meta .ic { width:16px; height:16px; }
+.tbl { display:grid; grid-template-columns:1fr auto auto; gap:6px 16px; margin-top:10px; padding-top:10px; border-top:1px solid var(--line); font-size:.92rem; }
+.tbl .h { color:var(--muted); font-size:.75rem; font-weight:600; }
+.tbl .r { text-align:right; font-variant-numeric:tabular-nums; }
+
+/* 분석 탭 */
+.stats { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:12px; }
+.stat { background:var(--card); border-radius:18px; padding:14px 12px; box-shadow:var(--shadow); }
+.stat .ic { color:var(--accent-ink); }
+.stat b { display:block; font-size:1.9rem; line-height:1.1; margin-top:6px; }
+.body-map svg { width:100%; height:auto; display:block; }
+.legend { display:flex; gap:4px; align-items:center; font-size:.75rem; color:var(--muted); }
+.legend i, .chip i { width:12px; height:12px; border-radius:3px; display:inline-block; }
+.chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
+.chip { display:flex; gap:6px; align-items:center; padding:5px 10px; border-radius:20px; background:var(--chip); font-size:.85rem; font-weight:500; }
+</style>
+</head>
+<body>
+<main id="app"></main>
+<nav></nav>
+<script src="muscles.js"></script>
+<script>
+// ponytail: 지금은 휴대폰 브라우저에 저장. 구글 드라이브 연동 때 load/save 부분만 바꾸면 된다.
+const KEY = 'workout-app';
+const data = JSON.parse(localStorage.getItem(KEY) || 'null') || { exercises: [], routines: [], logs: [], current: null };
+function save() { localStorage.setItem(KEY, JSON.stringify(data)); }
+data.program ??= { week: 1, day: 1 }; // PPLUL 진행 위치 (다음에 할 주차·일차)
+data.muscleOf ??= {};                 // 직접 추가한 운동의 근육 부위
+if (data.current) data.current.startedAt ??= Date.now();
+
+let tab = 'train';
+let editing = null;                   // 편집 중인 루틴
+let calMonth = null, selDay = null;   // 기록 탭 달력: 보고 있는 달(YYYY-MM), 고른 날
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const ymd = d => d.toLocaleDateString('sv'); // YYYY-MM-DD
+const today = () => ymd(new Date());
+const num = v => (v === '' ? 0 : +v);
+const fmt = n => Math.round(n).toLocaleString('ko-KR');
+const noExercises = '<p class="muted small">빠른 실행 → 운동 목록에서 운동을 먼저 추가하세요.</p>';
+
+// 아이콘 (선으로 그린 24x24 SVG)
+const ICONS = {
+  dumbbell: '<path d="M6 7v10M18 7v10M3 9.5v5M21 9.5v5M6 12h12"/>',
+  calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  chart: '<path d="M3 20h18M7 16v-5M12 16V6M17 16v-8"/>',
+  flame: '<path d="M12 22c4 0 7-2.7 7-7 0-4-3-6.5-4-9-1.5 2-2.5 3-4 3 .5-2 0-4-1-6-3 2.5-5 6-5 12 0 4.3 3 7 7 7z"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  clipboard: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v3H9zM9 11h6M9 15h4"/>',
+  list: '<path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  check: '<path d="m5 12 5 5 9-10"/>',
+  checkCircle: '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
+  play: '<path d="M7 4v16l13-8z"/>',
+  left: '<path d="m15 6-6 6 6 6"/>',
+  right: '<path d="m9 6 6 6-6 6"/>',
+  trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+};
+const icon = name => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`;
+
+// 목록에서 지워진 운동도 기존 루틴/기록에서는 보이도록 포함
+function exOptions(sel) {
+  const list = !sel || data.exercises.includes(sel) ? data.exercises : [sel, ...data.exercises];
+  return list.map(e => `<option ${e === sel ? 'selected' : ''}>${esc(e)}</option>`).join('');
+}
+
+// ---------- 날짜 ----------
+function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+function mondayOf(dateStr) { const d = new Date(dateStr + 'T00:00'); return addDays(d, -((d.getDay() + 6) % 7)); }
+function logsBetween(from, to) { return data.logs.filter(l => l.date >= from && l.date <= to); }
+function thisWeekLogs() { const mon = mondayOf(today()); return logsBetween(ymd(mon), ymd(addDays(mon, 6))); }
+// 주 5회를 채운 주가 몇 주 연속인지. 이번 주는 아직 진행 중이면 지난주부터 센다.
+function streak() {
+  const count = {};
+  data.logs.forEach(l => { const w = ymd(mondayOf(l.date)); count[w] = (count[w] || 0) + 1; });
+  let d = mondayOf(today()), n = 0;
+  if ((count[ymd(d)] || 0) < 5) d = addDays(d, -7);
+  while ((count[ymd(d)] || 0) >= 5) { n++; d = addDays(d, -7); }
+  return n;
+}
+const volume = l => l.items.reduce((a, it) => a + it.sets.reduce((b, s) => b + s.weight * s.reps, 0), 0);
+function elapsed(t) {
+  const s = Math.max(0, Math.floor((Date.now() - t) / 1000)), p = n => String(n).padStart(2, '0');
+  return (s >= 3600 ? Math.floor(s / 3600) + ':' : '') + p(Math.floor(s % 3600 / 60)) + ':' + p(s % 60);
+}
+
+// ---------- PPLUL 프로그램 (12주, 주 5회, 4주 단위 반복) ----------
+// 4주 안에서 주차별 목표 횟수. '5/3/1'은 세트마다 5회, 3회, 1회.
+const REPS = {
+  main: ['12-15', '8-12', '6-8', '3-5'],
+  cap6: ['12-15', '8-12', '6-8', '6-8'],    // 덤벨 프레스, 랫풀다운: 3-5회 대신 6-8회
+  arm:  ['12-15', '10-12', '8-10', '6-8'],  // 팔꿈치 부담 때문에 최저 6회
+  iso:  ['15-20', '12-15', '10-12', '8-10'], // 고중량이 비효율적인 고립 운동
+  vert: ['12-15', '8-12', '5-8', '3-5'],     // 4일차: 1·2주 랫풀다운, 3주 맨몸 풀업, 4주 중량 풀업
+  dead: ['5/3/1', '5/3/1', '5/3/1', '5/3/1'],
+};
+// 1주 증량 폭(kg). 덤벨은 한 손 기준. 목록에 없으면 2.5kg.
+const STEP = {
+  'Squat': 5, 'Conventional Deadlift': 5, 'Leg Press': 10,
+  'Incline Dumbbell Press': 2, 'Dumbbell Bench Press': 2,
+  'Side Lateral Raise': 1, 'Rear Delt Fly': 1, 'Hammer Curl': 1, 'Dumbbell Curl': 1,
+};
+const NOTES = {
+  'Pull-up': '무게 칸에는 추가 무게를 적습니다 (맨몸은 0).',
+  'Incline Dumbbell Press': '덤벨 한 손 무게', 'Dumbbell Bench Press': '덤벨 한 손 무게',
+};
+// [운동 이름(주차별로 다르면 4개 배열), 횟수 종류, 세트 수(기본 3)]
+const PPLUL_DAYS = [
+  ['Pull', [['Barbell Row', 'main'], ['Lat Pulldown', 'cap6'], ['Arm Pulldown', 'iso'], ['Rear Delt Fly', 'iso'], ['Barbell Curl', 'arm'], ['Hammer Curl', 'arm']]],
+  ['Push', [['Bench Press', 'main'], ['Incline Dumbbell Press', 'cap6'], ['Machine Shoulder Press', 'main'], ['Lying Triceps Extension', 'arm'], ['Cable Rope Pushdown', 'iso']]],
+  ['Legs', [['Squat', 'main'], ['Leg Press', 'main'], ['Leg Extension', 'iso'], ['Leg Curl', 'iso'], ['Side Lateral Raise', 'iso', 4]]],
+  ['Upper', [['Overhead Press', 'main'], ['Dumbbell Bench Press', 'cap6'], [['Lat Pulldown', 'Lat Pulldown', 'Pull-up', 'Pull-up'], 'vert'], ['Dumbbell Curl', 'arm'], ['Cable Straight-Arm Pulldown', 'iso']]],
+  ['Legs', [['Conventional Deadlift', 'dead'], ['Leg Extension', 'iso'], ['Leg Curl', 'iso'], ['Side Lateral Raise', 'iso', 4]]],
+];
+
+function programPlan(week, day) {
+  const p = (week - 1) % 4;
+  const [dayName, specs] = PPLUL_DAYS[day - 1];
+  return { dayName, items: specs.map(([name, scheme, nSets = 3]) => ({ exercise: Array.isArray(name) ? name[p] : name, target: REPS[scheme][p], nSets })) };
+}
+function findLog(week, day, exercise) {
+  for (let i = data.logs.length - 1; i >= 0; i--) {
+    const p = data.logs[i].program;
+    const it = p && p.week === week && p.day === day && data.logs[i].items.find(it => it.exercise === exercise);
+    if (it) return it;
+  }
+}
+// 이 운동을 가장 최근에 했을 때의 세트들 (운동 중 화면의 '이전' 칸)
+function previousSets(exercise) {
+  for (let i = data.logs.length - 1; i >= 0; i--) {
+    const it = data.logs[i].items.find(it => it.exercise === exercise);
+    if (it) return it.sets;
+  }
+  return [];
+}
+// 증량 기준: 2주차 평균 횟수가 목표 범위 가운데 값을 넘었는가 (8-12회면 평균 10 초과). 5/3/1은 모든 세트 성공.
+function passed(it) {
+  if (!it) return false;
+  const reps = it.sets.map(s => s.reps);
+  if (it.target.includes('/')) return it.target.split('/').every((t, i) => reps[i] >= +t);
+  const [lo, hi] = it.target.split('-').map(Number);
+  return reps.reduce((a, b) => a + b, 0) / reps.length > (lo + hi) / 2;
+}
+// 세트별 추천 무게
+// - 4주 안: 지난주 같은 일차 무게 + 증량 폭 (매주 증량)
+// - 새 4주 시작(5·9주차): 지난 4주의 1주차 무게, 그 4주의 2주차가 증량 기준을 넘었으면 + 증량 폭
+// - 지난주 기록이 없으면: 4주 전 같은 주차 무게 그대로. 그것도 없으면 빈칸(직접 입력)
+function suggestWeights(week, day, exercise, n) {
+  const step = STEP[exercise] ?? 2.5;
+  let base = (week - 1) % 4 ? findLog(week - 1, day, exercise) : null;
+  let add = base ? step : 0;
+  if (!base) {
+    base = findLog(week - 4, day, exercise);
+    if (base && (week - 1) % 4 === 0 && passed(findLog(week - 3, day, exercise))) add = step;
+  }
+  return Array.from({ length: n }, (_, i) => (base ? base.sets[Math.min(i, base.sets.length - 1)].weight + add : 0));
+}
+function startProgram() {
+  const { week, day } = data.program;
+  const plan = programPlan(week, day);
+  data.current = {
+    date: today(), startedAt: Date.now(),
+    name: `PPLUL ${week}주차 ${day}일차 ${plan.dayName}`,
+    program: { week, day },
+    items: plan.items.map(({ exercise, target, nSets }) => {
+      // 횟수 칸은 범위의 아래쪽 값으로 채운다. 실제로 한 횟수로 고쳐야 증량 판단이 맞다.
+      const reps = target.includes('/') ? target.split('/').map(Number) : Array(nSets).fill(+target.split('-')[0]);
+      const weights = suggestWeights(week, day, exercise, reps.length);
+      return { exercise, target, sets: reps.map((r, i) => ({ weight: weights[i], reps: r })) };
+    }),
+  };
+  save(); go('train');
+}
+
+// ---------- 근육 ----------
+const MUSCLE_LABEL = {
+  chest: '가슴', shoulders: '어깨', back: '등', biceps: '이두', triceps: '삼두', forearms: '전완',
+  abs: '복근', lowerback: '허리', glutes: '둔근', quads: '대퇴사두', hamstrings: '햄스트링', calves: '종아리',
+};
+// muscles.js 그림에서 부위별 근육 조각 id
+const MUSCLE_PATHS = {
+  chest: ['path847'],
+  shoulders: ['path861', 'path1452'],
+  back: ['path1268', 'path1211', 'path2220', 'path2115', 'path1955', 'path2085', 'path2163'],
+  biceps: ['path881', 'path948'],
+  triceps: ['path968', 'path1513', 'path1542'],
+  forearms: ['path908', 'path928', 'path998', 'path1065', 'path1080', 'path1109', 'path1648', 'path1598', 'path2254', 'path1697', 'path1725', 'path1797'],
+  abs: ['path970', 'path974', 'path978', 'path1012', 'path950', 'path2024'],
+  lowerback: ['path1867'],
+  glutes: ['path2744'],
+  quads: ['path1366', 'path1554', 'path1307', 'path2962'],
+  hamstrings: ['path2803', 'path2900', 'path2931', 'path2990', 'path3162'],
+  calves: ['path3022', 'path3075', 'path3216', 'path3254', 'path1734'],
+};
+// 운동별 사용 근육. 1 = 주동근, 0.5 = 보조근 (세트 수에 곱한다)
+const EX_MUSCLES = {
+  'Barbell Row': { back: 1, biceps: .5, shoulders: .5, lowerback: .5 },
+  'Lat Pulldown': { back: 1, biceps: .5 },
+  'Pull-up': { back: 1, biceps: .5 },
+  'Arm Pulldown': { back: 1 },
+  'Cable Straight-Arm Pulldown': { back: 1 },
+  'Rear Delt Fly': { shoulders: 1, back: .5 },
+  'Barbell Curl': { biceps: 1, forearms: .5 },
+  'Dumbbell Curl': { biceps: 1, forearms: .5 },
+  'Hammer Curl': { biceps: 1, forearms: 1 },
+  'Bench Press': { chest: 1, triceps: .5, shoulders: .5 },
+  'Incline Dumbbell Press': { chest: 1, shoulders: .5, triceps: .5 },
+  'Dumbbell Bench Press': { chest: 1, triceps: .5, shoulders: .5 },
+  'Machine Shoulder Press': { shoulders: 1, triceps: .5 },
+  'Overhead Press': { shoulders: 1, triceps: .5 },
+  'Lying Triceps Extension': { triceps: 1 },
+  'Cable Rope Pushdown': { triceps: 1 },
+  'Squat': { quads: 1, glutes: 1, lowerback: .5 },
+  'Leg Press': { quads: 1, glutes: .5 },
+  'Leg Extension': { quads: 1 },
+  'Leg Curl': { hamstrings: 1 },
+  'Side Lateral Raise': { shoulders: 1 },
+  'Conventional Deadlift': { hamstrings: 1, glutes: 1, lowerback: 1, back: .5, forearms: .5 },
+};
+const HEAT = ['#fde3b5', '#fbbf5c', '#f59e0b', '#e8590c']; // 적음 → 많음
+const heatLevel = s => (s <= 0 ? 0 : s < 4 ? 1 : s < 8 ? 2 : s < 12 ? 3 : 4);
+function muscleScore(logs) {
+  const score = {};
+  logs.forEach(l => l.items.forEach(it => {
+    const m = EX_MUSCLES[it.exercise] || (data.muscleOf[it.exercise] ? { [data.muscleOf[it.exercise]]: 1 } : {});
+    for (const g in m) score[g] = (score[g] || 0) + m[g] * it.sets.length;
+  }));
+  return score;
+}
+// 근육 그림. 그린 뒤 render()가 data-score대로 색을 칠한다.
+const bodyMap = score => `<div class="body-map" data-score="${esc(JSON.stringify(score))}">${MUSCLE_SVG}</div>`;
+function colorMuscles(score) {
+  for (const [g, ids] of Object.entries(MUSCLE_PATHS)) {
+    const lv = heatLevel(score[g] || 0);
+    if (lv) ids.forEach(id => { document.getElementById(id).style.fill = HEAT[lv - 1]; });
+  }
+}
+
+// ---------- 운동 탭 ----------
+function viewTrain() {
+  if (data.current) return viewWorkout();
+  const todayStr = today(), mon = mondayOf(todayStr);
+  const worked = new Set(data.logs.map(l => l.date));
+  const week = '월화수목금토일'.split('').map((c, i) => {
+    const ds = ymd(addDays(mon, i));
+    return `<span class="${worked.has(ds) ? 'done' : ''} ${ds === todayStr ? 'today' : ''}">${c}</span>`;
+  }).join('');
+  return `<div class="top">
+      <div class="streak"><div class="flame">${icon('flame')}</div>
+        <div><b class="num">${streak()}</b><span class="label">주 연속</span><div class="muted small">주 5회 목표</div></div></div>
+      <div class="week">${week}</div>
+    </div>
+    ${viewNextUp()}
+    <h2>빠른 실행</h2>
+    <div class="tiles">
+      <button class="tile" onclick="start(-1)"><span class="chip-ic">${icon('plus')}</span>빈 운동</button>
+      <button class="tile" onclick="go('routines')"><span class="chip-ic">${icon('clipboard')}</span>내 루틴</button>
+      <button class="tile" onclick="go('exercises')"><span class="chip-ic">${icon('list')}</span>운동 목록</button>
+    </div>`;
+}
+function viewNextUp() {
+  const { week, day } = data.program;
+  if (week > 12) return `<div class="hero"><div class="kicker">PPLUL</div><div class="day">완료!</div>
+    <div class="sub" style="margin-bottom:16px">12주 프로그램을 모두 끝냈습니다.</div>
+    <button class="btn-primary full" onclick="data.program = { week: 1, day: 1 }; save(); render()">1주차부터 다시</button></div>`;
+  const plan = programPlan(week, day);
+  const pct = Math.round(((week - 1) * 5 + day - 1) / 60 * 100);
+  const preview = muscleScore([{ items: plan.items.map(it => ({ exercise: it.exercise, sets: Array(it.nSets) })) }]);
+  const opts = (n, sel, label) => Array.from({ length: n }, (_, i) => `<option value="${i + 1}" ${i + 1 === sel ? 'selected' : ''}>${label(i)}</option>`).join('');
+  return `<div class="hero">
+    <div class="hero-top">
+      <div><div class="kicker">다음 운동 · PPLUL</div><div class="day">${plan.dayName}</div><div class="sub">${week}주차 ${day}일차</div></div>
+      <div class="hero-map">${bodyMap(preview)}</div>
+    </div>
+    <div class="row" style="margin:14px 0 6px"><div class="bar"><div style="width:${pct}%"></div></div><span class="small num" style="font-size:1rem">${pct}%</span></div>
+    ${plan.items.map(it => `<div class="ex-line"><span>${esc(it.exercise)}</span><span>${it.nSets}세트 × ${it.target}회</span></div>`).join('')}
+    <button class="btn-primary full" style="margin-top:12px; padding:14px" onclick="startProgram()">${icon('play')} 운동 시작</button>
+    <details><summary>주차·일차 변경</summary>
+      <div class="row">
+        <select onchange="data.program.week = +this.value; save(); render()">${opts(12, week, i => `${i + 1}주차`)}</select>
+        <select onchange="data.program.day = +this.value; save(); render()">${opts(5, day, i => `${i + 1}일차 ${PPLUL_DAYS[i][0]}`)}</select>
+      </div>
+    </details>
+  </div>`;
+}
+
+// ---------- 운동 중 ----------
+function viewWorkout() {
+  const w = data.current;
+  const active = w.items.findIndex(it => it.sets.some(s => !s.done)); // 아직 끝나지 않은 첫 운동
+  return `<div class="wbar">
+      <div class="timer">${icon('clock')}<span id="timer">${elapsed(w.startedAt)}</span></div>
+      <button class="btn-primary" onclick="finish()">${icon('check')} 완료</button>
+    </div>
+    <h1 style="font-size:1.3rem">${esc(w.name)}</h1>
+    ${w.items.map((it, i) => {
+      const prev = previousSets(it.exercise);
+      const tgt = it.target ? it.target.split('/') : [];
+      return `<div class="card ex ${i === active ? 'active' : ''}">
+        <div class="ex-head"><span class="ex-num num">${i + 1}</span><h3>${esc(it.exercise)}</h3>
+          <button class="icon-btn" onclick="removeItem(${i})" aria-label="운동 삭제">${icon('trash')}</button></div>
+        ${NOTES[it.exercise] ? `<div class="muted small" style="margin-top:6px">${NOTES[it.exercise]}</div>` : ''}
+        <div class="sets">
+          <span class="th">세트</span><span class="th">이전</span><span class="th">목표</span><span class="th">kg</span><span class="th">회</span><span class="th"></span>
+          ${it.sets.map((s, j) => { const p = prev[j]; return `<div class="set ${s.done ? 'done' : ''}">
+            <span class="setno num">${j + 1}</span>
+            <span class="prev">${p ? `${p.weight} × ${p.reps}` : '—'}</span>
+            <span class="tgt">${tgt.length > 1 ? tgt[j] ?? '—' : tgt[0] ?? '—'}</span>
+            <input type="number" inputmode="decimal" step="any" placeholder="0" value="${s.weight || ''}" oninput="setSet(${i}, ${j}, 'weight', this.value)" aria-label="${j + 1}세트 무게">
+            <input type="number" inputmode="numeric" placeholder="0" value="${s.reps || ''}" oninput="setSet(${i}, ${j}, 'reps', this.value)" aria-label="${j + 1}세트 횟수">
+            <button class="check" onclick="toggleDone(${i}, ${j})" aria-label="${j + 1}세트 완료">${icon('check')}</button>
+          </div>`; }).join('')}
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="grow" onclick="addSet(${i})">${icon('plus')} 세트 추가</button>
+          ${it.sets.length ? `<button class="btn-link" onclick="removeSet(${i}, ${it.sets.length - 1})">마지막 세트 삭제</button>` : ''}
+        </div>
+      </div>`;
+    }).join('')}
+    ${data.exercises.length ? `<div class="row" style="margin-top:16px">
+        <select id="addEx" class="grow">${exOptions('')}</select>
+        <button onclick="addItem(document.getElementById('addEx').value)">${icon('plus')} 운동 추가</button>
+      </div>` : noExercises}
+    <button class="btn-link danger full" style="margin-top:20px" onclick="cancelWorkout()">운동 취소</button>`;
+}
+// 루틴의 "세트 수"를 세트 줄로 펼친다. 각 세트는 권장값으로 채우고 수정 가능.
+function start(ri) {
+  const r = data.routines[ri];
+  data.current = {
+    date: today(), startedAt: Date.now(),
+    name: r ? r.name : '빈 운동',
+    items: r ? r.items.map(it => ({
+      exercise: it.exercise, target: String(it.reps),
+      sets: Array.from({ length: it.sets }, () => ({ weight: it.weight, reps: it.reps })),
+    })) : [],
+  };
+  save(); go('train');
+}
+function setSet(i, j, field, v) { data.current.items[i].sets[j][field] = num(v); save(); }
+function toggleDone(i, j) { const s = data.current.items[i].sets[j]; s.done = !s.done; save(); render(); }
+function addItem(name) {
+  const p = previousSets(name)[0] || { weight: 0, reps: 0 }; // 지난번 첫 세트 값으로 채움
+  data.current.items.push({ exercise: name, sets: [{ weight: p.weight, reps: p.reps }] });
+  save(); render();
+}
+function removeItem(i) {
+  if (!confirm(`${data.current.items[i].exercise}을(를) 이번 운동에서 뺄까요?`)) return;
+  data.current.items.splice(i, 1); save(); render();
+}
+function addSet(i) {
+  const sets = data.current.items[i].sets;
+  const last = sets[sets.length - 1] || { weight: 0, reps: 0 };
+  sets.push({ weight: last.weight, reps: last.reps }); // 직전 세트 값 복사
+  save(); render();
+}
+function removeSet(i, j) { data.current.items[i].sets.splice(j, 1); save(); render(); }
+// 체크한 세트만 기록에 남긴다.
+function finish() {
+  const w = data.current;
+  const items = w.items.map(it => ({ ...it, sets: it.sets.filter(s => s.done) })).filter(it => it.sets.length);
+  if (!items.length) return alert('완료한 세트가 없습니다. 끝낸 세트 옆 동그라미를 눌러 체크하세요.');
+  const skipped = w.items.reduce((a, it) => a + it.sets.filter(s => !s.done).length, 0);
+  if (skipped && !confirm(`체크하지 않은 세트 ${skipped}개는 기록에서 빠집니다. 운동을 끝낼까요?`)) return;
+  w.items = items;
+  w.minutes = Math.round((Date.now() - w.startedAt) / 60000);
+  data.logs.push(w);
+  if (w.program) { // 다음 일차로
+    const { week, day } = w.program;
+    data.program = day < 5 ? { week, day: day + 1 } : { week: week + 1, day: 1 };
+  }
+  data.current = null;
+  calMonth = null; selDay = null;
+  save(); go('history');
+}
+function cancelWorkout() {
+  if (!confirm('진행 중인 운동을 취소할까요? 입력한 내용은 저장되지 않습니다.')) return;
+  data.current = null; save(); render();
+}
+setInterval(() => { const el = document.getElementById('timer'); if (el && data.current) el.textContent = elapsed(data.current.startedAt); }, 1000);
+
+// ---------- 내 루틴 ----------
+function viewRoutines() {
+  if (editing) return `<h1>${editing.index < 0 ? '새 루틴' : '루틴 수정'}</h1>
+    <div class="card">
+      <input placeholder="루틴 이름 (예: 가슴 데이)" value="${esc(editing.name)}" oninput="editing.name = this.value" style="width:100%">
+      ${editing.items.map((it, i) => `<div style="margin-top:14px">
+        <div class="row"><select class="grow" onchange="editing.items[${i}].exercise = this.value">${exOptions(it.exercise)}</select>
+          <button class="icon-btn" onclick="editing.items.splice(${i}, 1); render()" aria-label="운동 삭제">${icon('trash')}</button></div>
+        <div class="row">
+          <input type="number" inputmode="numeric" value="${it.sets}" oninput="editing.items[${i}].sets = num(this.value)" style="width:64px">세트
+          <input type="number" inputmode="numeric" value="${it.reps}" oninput="editing.items[${i}].reps = num(this.value)" style="width:64px">회
+          <input type="number" inputmode="decimal" step="any" value="${it.weight}" oninput="editing.items[${i}].weight = num(this.value)" style="width:76px">kg
+        </div></div>`).join('')}
+      <div style="margin-top:14px">${data.exercises.length
+        ? `<button class="btn-add" onclick="editing.items.push({ exercise: data.exercises[0], sets: 3, reps: 10, weight: 0 }); render()">${icon('plus')} 운동 추가</button>`
+        : noExercises}</div>
+    </div>
+    <div class="row"><button class="btn-primary grow" onclick="saveRoutine()">저장</button><button onclick="editing = null; render()">취소</button></div>`;
+
+  return `<button class="btn-link" onclick="go('train')">${icon('left')} 운동</button><h1>내 루틴</h1>
+    ${data.routines.map((r, i) => `<div class="card"><h3>${esc(r.name)}</h3>
+      ${r.items.map(it => `<div class="ex-line small"><span>${esc(it.exercise)}</span><span>${it.weight}kg × ${it.reps}회 × ${it.sets}세트</span></div>`).join('')}
+      <div class="row" style="margin-top:10px"><button class="btn-primary" onclick="start(${i})">${icon('play')} 시작</button>
+        <button onclick="editRoutine(${i})">수정</button><button class="btn-link danger" onclick="delRoutine(${i})">삭제</button></div>
+    </div>`).join('')}
+    <button class="btn-add" onclick="editRoutine(-1)">${icon('plus')} 새 루틴</button>`;
+}
+function editRoutine(i) {
+  editing = i < 0 ? { index: -1, name: '', items: [] } : { index: i, ...structuredClone(data.routines[i]) };
+  render();
+}
+function saveRoutine() {
+  if (!editing.name.trim()) return alert('루틴 이름을 입력하세요.');
+  const { index, ...r } = editing;
+  if (index < 0) data.routines.push(r); else data.routines[index] = r;
+  editing = null; save(); render();
+}
+function delRoutine(i) {
+  if (!confirm(`'${data.routines[i].name}' 루틴을 삭제할까요?`)) return;
+  data.routines.splice(i, 1); save(); render();
+}
+
+// ---------- 운동 목록 ----------
+function viewExercises() {
+  return `<button class="btn-link" onclick="go('train')">${icon('left')} 운동</button><h1>운동 목록</h1>
+    <form class="card" onsubmit="addExercise(this); return false">
+      <div class="row"><input name="ex" class="grow" placeholder="운동 이름 (예: Cable Fly)"></div>
+      <div class="row">
+        <select name="muscle" class="grow"><option value="">근육 부위 (선택)</option>${Object.entries(MUSCLE_LABEL).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select>
+        <button class="btn-primary">${icon('plus')} 추가</button>
+      </div>
+      <p class="muted small" style="margin:6px 0 0">부위를 고르면 분석 탭의 근육 지도에 표시됩니다.</p>
+    </form>
+    ${data.exercises.map((e, i) => `<div class="card row between" style="padding:12px 16px">
+      <span><b>${esc(e)}</b> <span class="muted small">${MUSCLE_LABEL[data.muscleOf[e]] || ''}</span></span>
+      <button class="icon-btn" onclick="delExercise(${i})" aria-label="삭제">${icon('trash')}</button></div>`).join('')}`;
+}
+function addExercise(form) {
+  const v = form.ex.value.trim();
+  if (!v) return;
+  if (data.exercises.includes(v)) return alert('이미 있는 운동입니다.');
+  data.exercises.push(v);
+  if (form.muscle.value) data.muscleOf[v] = form.muscle.value;
+  save(); render();
+}
+function delExercise(i) {
+  if (!confirm(`'${data.exercises[i]}'을(를) 목록에서 삭제할까요? 지난 기록은 그대로 남습니다.`)) return;
+  data.exercises.splice(i, 1); save(); render();
+}
+
+// ---------- 기록 탭 ----------
+function viewHistory() {
+  calMonth ??= today().slice(0, 7);
+  const [y, m] = calMonth.split('-').map(Number);
+  const offset = (new Date(y, m - 1, 1).getDay() + 6) % 7; // 월요일 시작
+  const days = new Date(y, m, 0).getDate();
+  const worked = new Set(data.logs.map(l => l.date));
+  const cells = '월화수목금토일'.split('').map(c => `<span class="head">${c}</span>`).join('')
+    + '<span></span>'.repeat(offset)
+    + Array.from({ length: days }, (_, i) => {
+      const ds = `${calMonth}-${String(i + 1).padStart(2, '0')}`;
+      const cls = [worked.has(ds) && 'done', ds === today() && 'today', ds === selDay && 'sel'].filter(Boolean).join(' ');
+      return `<button class="day ${cls}" onclick="selDay = selDay === '${ds}' ? null : '${ds}'; render()">${i + 1}</button>`;
+    }).join('');
+  const logs = data.logs.map((l, i) => [l, i])
+    .filter(([l]) => (selDay ? l.date === selDay : l.date.startsWith(calMonth)))
+    .reverse().sort((a, b) => b[0].date.localeCompare(a[0].date));
+  return `<h1>기록</h1>
+    <div class="card">
+      <div class="row between" style="margin:0 0 6px"><button class="icon-btn" onclick="moveMonth(-1)" aria-label="이전 달">${icon('left')}</button>
+        <b class="num" style="font-size:1.3rem">${y}. ${String(m).padStart(2, '0')}</b><button class="icon-btn" onclick="moveMonth(1)" aria-label="다음 달">${icon('right')}</button></div>
+      <div class="cal">${cells}</div>
+    </div>
+    ${logs.length ? logs.map(([l, i]) => viewLogCard(l, i)).join('')
+      : `<p class="muted" style="text-align:center">${selDay ? '이 날' : '이 달'}에는 기록이 없습니다.</p>`}`;
+}
+function viewLogCard(l, i) {
+  const best = it => it.sets.reduce((b, s) => (s.weight > b.weight || (s.weight === b.weight && s.reps > b.reps) ? s : b));
+  return `<div class="card">
+    <div class="row between" style="margin:0"><span class="muted small">${l.date.replaceAll('-', '.')}</span>
+      <button class="icon-btn" onclick="delLog(${i})" aria-label="기록 삭제">${icon('trash')}</button></div>
+    <h3 style="margin:0">${esc(l.name)}</h3>
+    <div class="meta"><span>${icon('clock')}${l.minutes ?? 0}분</span><span>${icon('dumbbell')}${fmt(volume(l))}kg</span></div>
+    <div class="tbl"><span class="h">운동</span><span class="h r">세트</span><span class="h r">최고 세트</span>
+      ${l.items.map(it => { const b = best(it); return `<span>${esc(it.exercise)}</span><span class="r">${it.sets.length}</span><span class="r">${b.weight}kg × ${b.reps}</span>`; }).join('')}
+    </div>
+  </div>`;
+}
+function moveMonth(n) {
+  const [y, m] = calMonth.split('-').map(Number);
+  calMonth = ymd(new Date(y, m - 1 + n, 1)).slice(0, 7); selDay = null; render();
+}
+function delLog(i) {
+  if (!confirm('이 기록을 삭제할까요?')) return;
+  data.logs.splice(i, 1); save(); render();
+}
+
+// ---------- 분석 탭 ----------
+function viewAnalytics() {
+  const logs = thisWeekLogs();
+  const score = muscleScore(logs);
+  const used = Object.keys(MUSCLE_LABEL).filter(g => score[g] > 0).sort((a, b) => score[b] - score[a]);
+  const mon = mondayOf(today());
+  return `<h1>이번 주 <span class="muted small" style="font-weight:500">${ymd(mon).slice(5).replace('-', '.')} – ${ymd(addDays(mon, 6)).slice(5).replace('-', '.')}</span></h1>
+    <div class="stats">
+      <div class="stat">${icon('checkCircle')}<b class="num">${logs.length}</b><span class="muted small">운동</span></div>
+      <div class="stat">${icon('dumbbell')}<b class="num">${fmt(logs.reduce((a, l) => a + volume(l), 0))}</b><span class="muted small">볼륨 kg</span></div>
+      <div class="stat">${icon('clock')}<b class="num">${logs.reduce((a, l) => a + (l.minutes || 0), 0)}</b><span class="muted small">분</span></div>
+    </div>
+    <div class="card">
+      <div class="row between" style="margin:0"><h3 style="margin:0">근육 사용</h3>
+        <div class="legend">적음 ${HEAT.map(c => `<i style="background:${c}"></i>`).join('')} 많음</div></div>
+      ${bodyMap(score)}
+      <div class="chips">${used.length
+        ? used.map(g => `<span class="chip"><i style="background:${HEAT[heatLevel(score[g]) - 1]}"></i>${MUSCLE_LABEL[g]} ${+score[g].toFixed(1)}세트</span>`).join('')
+        : '<span class="muted small">이번 주 기록이 없습니다.</span>'}</div>
+      <p class="muted small" style="margin-bottom:0">세트 수 기준. 보조로 쓰인 근육은 0.5세트로 셉니다.</p>
+    </div>`;
+}
+
+// ---------- 화면 ----------
+const VIEWS = { train: viewTrain, routines: viewRoutines, exercises: viewExercises, history: viewHistory, analytics: viewAnalytics };
+const TABS = [['train', 'dumbbell', '운동'], ['history', 'calendar', '기록'], ['analytics', 'chart', '분석']];
+function render() {
+  document.getElementById('app').innerHTML = VIEWS[tab]();
+  const map = document.querySelector('.body-map');
+  if (map) colorMuscles(JSON.parse(map.dataset.score));
+  const navTab = tab === 'routines' || tab === 'exercises' ? 'train' : tab;
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === navTab));
+}
+function go(t) { tab = t; render(); scrollTo(0, 0); }
+document.querySelector('nav').innerHTML = TABS.map(([t, ic, label]) => `<button data-tab="${t}">${icon(ic)}<span>${label}</span></button>`).join('');
+document.querySelector('nav').onclick = e => { const b = e.target.closest('button'); if (b) go(b.dataset.tab); };
+render();
+</script>
+</body>
+</html>
