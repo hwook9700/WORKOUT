@@ -29,10 +29,13 @@
     --accent-ink:#fb923c; --accent-soft:rgba(249,115,22,.18); --hero:#23262c; --danger:#f87171; --body:#3a3e46; --shadow:none; }
 }
 * { box-sizing:border-box; }
-html { scrollbar-gutter:stable; } /* PC에서 스크롤바가 생겼다 없어지며 탭이 좌우로 밀리지 않게 */
-body { margin:0; font-family:var(--font); background:var(--bg); color:var(--text); letter-spacing:-.01em;
-  padding-bottom:calc(84px + env(safe-area-inset-bottom)); -webkit-tap-highlight-color:transparent; }
-main { padding:calc(20px + env(safe-area-inset-top)) 16px 20px; max-width:480px; margin:auto; }
+/* 앱 구조: 화면 높이에 맞춘 세로 배치. 내용(main)만 스크롤되고 탭(nav)은 항상 맨 아래에 붙어 있다.
+   페이지 전체가 스크롤되면 아이폰에서 탭이 움직이는 문제가 있어서 이렇게 했다. */
+html, body { height:100%; overscroll-behavior:none; }
+body { height:100dvh; margin:0; display:flex; flex-direction:column; overflow:hidden; font-family:var(--font); background:var(--bg); color:var(--text);
+  letter-spacing:-.01em; -webkit-tap-highlight-color:transparent; }
+main { flex:1; overflow-y:auto; overscroll-behavior-y:contain; scrollbar-gutter:stable both-edges;
+  padding:calc(20px + env(safe-area-inset-top)) max(16px, calc(50% - 240px)) 20px; } /* 가로 패딩: 넓은 화면에서 내용 폭 480px로 가운데 */
 h1 { font-size:1.6rem; font-weight:800; margin:4px 0 16px; letter-spacing:-.02em; }
 h2 { font-size:1.05rem; font-weight:700; margin:28px 0 12px; }
 h3 { font-size:1rem; font-weight:700; margin:0 0 8px; }
@@ -56,8 +59,8 @@ button:active { transform:scale(.98); }
 input, select { font:inherit; font-size:16px; padding:10px; border:1px solid var(--line); border-radius:10px; background:var(--card); color:var(--text); min-width:0; }
 
 /* 하단 탭 */
-nav { position:fixed; bottom:0; left:0; right:0; display:flex; background:var(--card); border-top:1px solid var(--line);
-  padding:6px 0 calc(6px + env(safe-area-inset-bottom)); z-index:10; }
+nav { flex:none; display:flex; background:var(--card); border-top:1px solid var(--line);
+  padding:6px 0 calc(6px + env(safe-area-inset-bottom)); }
 nav button { flex:1; flex-direction:column; gap:3px; padding:6px 0; background:none; color:var(--muted); font-size:.75rem; font-weight:600; border-radius:0; }
 nav button .ic { width:24px; height:24px; }
 nav button.on { color:var(--accent-ink); }
@@ -98,7 +101,7 @@ details summary { font-size:.85rem; margin-top:12px; cursor:pointer; }
 .chip-ic .ic { width:24px; height:24px; }
 
 /* 운동 중 */
-.wbar { position:sticky; top:0; z-index:5; display:flex; align-items:center; justify-content:space-between; gap:8px;
+.wbar { position:sticky; top:calc(-20px - env(safe-area-inset-top)); z-index:5; /* main 위쪽 여백만큼 올려서 화면 맨 위에 붙임 */ display:flex; align-items:center; justify-content:space-between; gap:8px;
   margin:calc(-20px - env(safe-area-inset-top)) -16px 8px; padding:calc(12px + env(safe-area-inset-top)) 16px 12px; background:color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter:blur(10px); }
 .timer { display:flex; gap:6px; align-items:center; background:var(--card); border-radius:999px; padding:7px 14px 7px 12px; box-shadow:var(--shadow); }
 .timer .ic { color:var(--accent); }
@@ -673,7 +676,7 @@ function render() {
   const navTab = tab === 'routines' || tab === 'exercises' ? 'train' : tab;
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === navTab));
 }
-function go(t) { tab = t; render(); scrollTo(0, 0); }
+function go(t) { tab = t; render(); document.getElementById('app').scrollTop = 0; }
 document.querySelector('nav').innerHTML = TABS.map(([t, ic, label]) => `<button data-tab="${t}">${icon(ic)}<span>${label}</span></button>`).join('');
 document.querySelector('nav').onclick = e => { const b = e.target.closest('button'); if (b) go(b.dataset.tab); };
 render();
