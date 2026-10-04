@@ -29,6 +29,7 @@
     --accent-ink:#fb923c; --accent-soft:rgba(249,115,22,.18); --hero:#23262c; --danger:#f87171; --body:#3a3e46; --shadow:none; }
 }
 * { box-sizing:border-box; }
+html { scrollbar-gutter:stable; } /* PC에서 스크롤바가 생겼다 없어지며 탭이 좌우로 밀리지 않게 */
 body { margin:0; font-family:var(--font); background:var(--bg); color:var(--text); letter-spacing:-.01em;
   padding-bottom:calc(84px + env(safe-area-inset-bottom)); -webkit-tap-highlight-color:transparent; }
 main { padding:calc(20px + env(safe-area-inset-top)) 16px 20px; max-width:480px; margin:auto; }
@@ -442,7 +443,7 @@ function viewWorkout() {
             <span class="setno num">${j + 1}</span>
             <span class="prev">${p ? `${p.weight} × ${p.reps}` : '—'}</span>
             <span class="tgt">${tgt.length > 1 ? tgt[j] ?? '—' : tgt[0] ?? '—'}</span>
-            <input type="number" inputmode="decimal" step="any" placeholder="0" value="${s.weight || ''}" oninput="setSet(${i}, ${j}, 'weight', this.value)" aria-label="${j + 1}세트 무게">
+            <input type="number" inputmode="decimal" step="any" placeholder="0" value="${s.weight || ''}" oninput="setSet(${i}, ${j}, 'weight', this.value)" ${j ? '' : `onchange="rampFrom(${i})"`} aria-label="${j + 1}세트 무게">
             <input type="number" inputmode="numeric" placeholder="0" value="${s.reps || ''}" oninput="setSet(${i}, ${j}, 'reps', this.value)" aria-label="${j + 1}세트 횟수">
             <button class="check" onclick="toggleDone(${i}, ${j})" aria-label="${j + 1}세트 완료">${icon('check')}</button>
           </div>`; }).join('')}
@@ -473,6 +474,14 @@ function start(ri) {
   save(); go('train');
 }
 function setSet(i, j, field, v) { data.current.items[i].sets[j][field] = num(v); save(); }
+// 5/3/1처럼 세트마다 무거워지는 운동: 1세트 무게를 넣으면 비어 있는 다음 세트를 5%씩 무겁게 채운다 (2.5kg 단위)
+function rampFrom(i) {
+  const it = data.current.items[i], w = it.sets[0]?.weight;
+  if (!it.target?.includes('/') || !w) return;
+  const empty = it.sets.filter((s, k) => k && !s.weight);
+  empty.forEach(s => { s.weight = Math.round(w * (1 + 0.05 * it.sets.indexOf(s)) / 2.5) * 2.5; });
+  if (empty.length) { save(); render(); }
+}
 function toggleDone(i, j) { const s = data.current.items[i].sets[j]; s.done = !s.done; save(); render(); }
 function addItem(name) {
   const p = previousSets(name)[0] || { weight: 0, reps: 0 }; // 지난번 첫 세트 값으로 채움
